@@ -1,152 +1,231 @@
-window.onload = function() {
-    let chart = null;
-
-    function plotGraph() {
-        const functionInput = document.getElementById('functionInput').value;
-
-        if (!functionInput) {
-            alert('Please enter a function.');
-            return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f9;
         }
+        .calculator {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+        }
+        input[type="text"] {
+            width: 100%;
+            font-size: 18px;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn-plot {
+            background: #0078D7;
+            color: white;
+        }
+        .btn-bisection {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-clear {
+            background: #D32F2F;
+            color: white;
+        }
+        #graphContainer {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h2>Function Calculator and Graph Plotter</h2>
+        <input type="text" id="functionInput" placeholder="Enter a function (e.g., x^2 - 4)">
+        <div>
+            <button class="btn-plot" onclick="plotGraph()">Plot Graph</button>
+            <button class="btn-bisection" onclick="findRoots()">Find Roots (Bisection)</button>
+            <button class="btn-clear" onclick="clearInput()">Clear Input</button>
+        </div>
+    </div>
+    <div id="graphContainer">
+        <canvas id="graph"></canvas>
+    </div>
 
-        try {
-            const f = new Function('x', `return ${parseFunction(functionInput)}`);
-            const xValues = [];
-            const yValues = [];
-            let yMin = Infinity;
-            let yMax = -Infinity;
+    <script>
+        let chart = null;
 
-            // -10 to 10 범위에서 x 값에 대해 y 값을 계산
-            for (let x = -10; x <= 10; x += 0.1) {
-                const y = f(x);
-                xValues.push(parseFloat(x.toFixed(1)));
-                yValues.push(y);
+        // 그래프를 그리는 함수
+        function plotGraph() {
+            const functionInput = document.getElementById('functionInput').value;
 
-                if (y < yMin) yMin = y;
-                if (y > yMax) yMax = y;
+            if (!functionInput) {
+                alert('Please enter a function.');
+                return;
             }
 
-            const ctx = document.getElementById('graph').getContext('2d');
-            if (chart) {
-                chart.destroy();
-            }
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: xValues,
-                    datasets: [{
-                        label: `f(x): ${functionInput}`,
-                        data: yValues,
-                        borderColor: 'blue',
-                        borderWidth: 2,
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            min: -10,
-                            max: 10,
-                            ticks: { stepSize: 1 },
-                            title: { display: true, text: 'x (Domain: [-10, 10])' }
-                        },
-                        y: {
-                            min: yMin - Math.abs(yMin) * 0.1, // y 값 범위 자동 조정
-                            max: yMax + Math.abs(yMax) * 0.1, // y 값 범위 자동 조정
-                            ticks: { stepSize: (yMax - yMin) / 10 }, // 자동으로 적절한 눈금 간격 설정
-                            title: { display: true, text: 'f(x)' }
+            try {
+                const f = new Function('x', `return ${parseFunction(functionInput)}`);
+                const xValues = [];
+                const yValues = [];
+                let yMin = Infinity;
+                let yMax = -Infinity;
+
+                for (let x = -10; x <= 10; x += 0.1) {
+                    const y = f(x);
+                    xValues.push(parseFloat(x.toFixed(1)));
+                    yValues.push(y);
+
+                    if (y < yMin) yMin = y;
+                    if (y > yMax) yMax = y;
+                }
+
+                const ctx = document.getElementById('graph').getContext('2d');
+                if (chart) {
+                    chart.destroy();
+                }
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: xValues,
+                        datasets: [{
+                            label: `f(x): ${functionInput}`,
+                            data: yValues,
+                            borderColor: 'blue',
+                            borderWidth: 2,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                min: -10,
+                                max: 10,
+                                ticks: { stepSize: 1 },
+                                title: { display: true, text: 'x (Domain: [-10, 10])' }
+                            },
+                            y: {
+                                min: yMin - Math.abs(yMin) * 0.1,
+                                max: yMax + Math.abs(yMax) * 0.1,
+                                ticks: { stepSize: (yMax - yMin) / 10 },
+                                title: { display: true, text: 'f(x)' }
+                            }
                         }
                     }
+                });
+            } catch (error) {
+                alert('Invalid function. Please try again.');
+            }
+        }
+
+        // 입력 필드를 비우는 함수
+        function clearInput() {
+            document.getElementById('functionInput').value = '';
+        }
+
+        // 이분법으로 근을 찾는 함수
+        function findRoots() {
+            const functionInput = document.getElementById('functionInput').value;
+
+            if (!functionInput) {
+                alert('Please enter a function.');
+                return;
+            }
+
+            try {
+                const f = new Function('x', `return ${parseFunction(functionInput)}`);
+
+                const a = -10;
+                const b = 10;
+                const tolerance = 1e-6;
+                const maxIterations = 100;
+
+                const roots = findAllRoots(f, a, b, tolerance, maxIterations);
+
+                if (roots.length === 0) {
+                    alert('No roots found in the range [-10, 10].');
+                } else {
+                    alert(`Root(s) found: ${roots.join(', ')}`);
                 }
-            });
-        } catch (error) {
-            alert('Invalid function. Please try again.');
-        }
-    }
-
-    function clearInput() {
-        document.getElementById('functionInput').value = ''; // 입력 창 초기화
-    }
-
-    function findRoots() {
-        const functionInput = document.getElementById('functionInput').value;
-
-        if (!functionInput) {
-            alert('Please enter a function.');
-            return;
-        }
-
-        try {
-            const f = new Function('x', `return ${parseFunction(functionInput)}`);
-
-            const a = -10;
-            const b = 10;
-            const tolerance = 1e-6;
-            const maxIterations = 100;
-
-            const roots = findAllRoots(f, a, b, tolerance, maxIterations);
-
-            if (roots.length === 0) {
-                alert('No roots found in the range [-10, 10].');
-            } else {
-                alert(`Root(s) found: ${roots.join(', ')}`);
-            }
-        } catch (error) {
-            alert('Invalid function. Please try again.');
-        }
-    }
-
-    function findAllRoots(f, a, b, tolerance, maxIterations) {
-        const roots = [];
-        const step = 1;
-        for (let start = a; start < b; start += step) {
-            const end = start + step;
-            const root = bisectionMethod(f, start, end, tolerance, maxIterations);
-            if (root !== null && !roots.some(r => Math.abs(r - root) < tolerance)) {
-                roots.push(root);
+            } catch (error) {
+                alert('Invalid function. Please try again.');
             }
         }
-        return roots;
-    }
 
-    function bisectionMethod(f, a, b, tolerance, maxIterations) {
-        let fa = f(a);
-        let fb = f(b);
-
-        if (fa * fb > 0) return null;
-
-        for (let i = 0; i < maxIterations; i++) {
-            const mid = (a + b) / 2;
-            const fm = f(mid);
-
-            if (Math.abs(fm) < tolerance) return parseFloat(mid.toFixed(6));
-
-            if (fa * fm < 0) {
-                b = mid;
-                fb = fm;
-            } else {
-                a = mid;
-                fa = fm;
+        function findAllRoots(f, a, b, tolerance, maxIterations) {
+            const roots = [];
+            const step = 1;
+            for (let start = a; start < b; start += step) {
+                const end = start + step;
+                const root = bisectionMethod(f, start, end, tolerance, maxIterations);
+                if (root !== null && !roots.some(r => Math.abs(r - root) < tolerance)) {
+                    roots.push(root);
+                }
             }
+            return roots;
         }
-        return null;
-    }
 
-    function parseFunction(func) {
-        return func
-            .replace(/\s/g, '') // 공백 제거
-            .replace(/(\d)([a-zA-Z(])/g, '$1*$2') // 숫자와 문자/괄호 사이에 곱셈 추가
-            .replace(/([a-zA-Z)])(\d)/g, '$1*$2') // 문자/괄호와 숫자 사이에 곱셈 추가
-            .replace(/\^/g, '**') // 제곱 기호
-            .replace(/sqrt/g, 'Math.sqrt') // 제곱근
-            .replace(/sin/g, 'Math.sin') // 사인 함수
-            .replace(/cos/g, 'Math.cos') // 코사인 함수
-            .replace(/tan/g, 'Math.tan') // 탄젠트 함수
-            .replace(/csc/g, '(1 / Math.sin)') // 코시컨트
-            .replace(/sec/g, '(1 / Math.cos)') // 시컨트
-            .replace(/cot/g, '(1 / Math.tan)') // 코탄젠트
-            .replace(/exp/g, 'Math.exp'); // 지수 함수
-    }
-};
-</script>
+        function bisectionMethod(f, a, b, tolerance, maxIterations) {
+            let fa = f(a);
+            let fb = f(b);
+
+            if (fa * fb > 0) return null;
+
+            for (let i = 0; i < maxIterations; i++) {
+                const mid = (a + b) / 2;
+                const fm = f(mid);
+
+                if (Math.abs(fm) < tolerance) return parseFloat(mid.toFixed(6));
+
+                if (fa * fm < 0) {
+                    b = mid;
+                    fb = fm;
+                } else {
+                    a = mid;
+                    fa = fm;
+                }
+            }
+            return null;
+        }
+
+        function parseFunction(func) {
+            return func
+                .replace(/\s/g, '')
+                .replace(/(\d)([a-zA-Z(])/g, '$1*$2')
+                .replace(/([a-zA-Z)])(\d)/g, '$1*$2')
+                .replace(/\^/g, '**')
+                .replace(/sqrt/g, 'Math.sqrt')
+                .replace(/sin/g, 'Math.sin')
+                .replace(/cos/g, 'Math.cos')
+                .replace(/tan/g, 'Math.tan')
+                .replace(/csc/g, '(1 / Math.sin)')
+                .replace(/sec/g, '(1 / Math.cos)')
+                .replace(/cot/g, '(1 / Math.tan)')
+                .replace(/exp/g, 'Math.exp');
+        }
+    </script>
+</body>
+</html>
